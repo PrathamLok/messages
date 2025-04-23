@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Form</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Import fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    /* CSS Reset & Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2a6dd9;
+      --primary-dark: #1d5bc3;
+      --secondary: #5d5dff;
+      --dark: #212121;
+      --light: #f8f9fa;
+      --gray: #6c757d;
+      --success: #28a745;
+      --transition: all 0.3s ease;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f8fb;
+      color: var(--dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Header Styles */
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      letter-spacing: 1px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    /* Main Content Styles */
+    main {
+      padding: 2rem 1rem;
+    }
+
+    /* Contact Form Styles */
+    #contact {
+      padding: 3rem 2rem;
+      margin: 3rem auto;
+      max-width: 800px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(to right bottom, #fff, #f8fbff);
+    }
+
+    #contact:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+
+    #contact::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s ease;
+    }
+
+    #contact:hover::before {
+      transform: scaleX(1);
+    }
+
+    h2 {
+      border-bottom: none;
+      padding-bottom: 1rem;
+      font-size: 2rem;
+      color: var(--primary);
+      position: relative;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: var(--primary);
+    }
+
+    form#contactForm {
+      display: flex;
+      flex-direction: column;
+      max-width: 500px;
+      margin: 2rem auto;
+    }
+
+    form#contactForm label {
+      margin-top: 1rem;
+      font-weight: 500;
+      color: var(--dark);
+    }
+
+    form#contactForm input,
+    form#contactForm textarea {
+      padding: 1rem;
+      margin-top: 0.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      transition: var(--transition);
+      font-family: 'Poppins', sans-serif;
+      resize: vertical;
+    }
+
+    form#contactForm input:focus,
+    form#contactForm textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(42, 109, 217, 0.2);
+    }
+
+    form#contactForm button {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+    }
+
+    form#contactForm button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    form#contactForm button:active {
+      transform: translateY(-1px);
+    }
+
+    /* Form response message */
+    #formResponse {
+      text-align: center;
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .success-message {
+      background-color: rgba(40, 167, 69, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(40, 167, 69, 0.2);
+    }
+
+    .error-message {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+      border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+
+    /* Footer Styles */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 3rem;
+      position: relative;
+    }
+
+    .footer-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Loading animation for form submission */
+    @keyframes spinner {
+      to {transform: rotate(360deg);}
+    }
+
+    .loading {
+      position: relative;
+    }
+
+    .loading::before {
+      content: '';
+      box-sizing: border-box;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin-top: -10px;
+      margin-left: -10px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      border-top-color: var(--primary);
+      animation: spinner .6s linear infinite;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #contact {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      header {
+        padding: 1rem;
+      }
+      
+      #contact {
+        padding: 2rem 1rem;
+        margin: 2rem auto;
+      }
+      
+      form#contactForm {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Contact Us</h1>
+  </header>
+
+  <main>
+    <section id="contact">
+      <h2>Get In Touch</h2>
+      <form id="contactForm">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Your name" required>
+        
+        <label for="mobile">Mobile Number</label>
+        <input type="tel" id="mobile" name="mobile" placeholder="Your mobile number" required>
+        
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="Your email address" required>
+        
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="5" placeholder="Your message" required></textarea>
+        
+        <button type="submit">Send Message</button>
+      </form>
+      <div id="formResponse"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <p>&copy; 2025 Contact Form App. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Supabase client
+    const SUPABASE_URL = "https://ukpogkbquuchdhkmrona.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrcG9na2JxdXVjaGRoa21yb25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUzMDQwMTMsImV4cCI6MjA2MDg4MDAxM30.S0rwUCeAOfRFkXoEx33_ZB6MTyz_6g6qBtW9YH6NE3c";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Function to display response messages
+    function showResponse(message, isError = false) {
+      const responseElement = document.getElementById("formResponse");
+      responseElement.textContent = message;
+      responseElement.className = isError ? "error-message" : "success-message";
+    }
+
+    // Listen for form submission
+    document.getElementById("contactForm").addEventListener("submit", async (e) => {
+      e.preventDefault(); // Prevent the default form submission
+
+      // Get button and add loading state
+      const submitButton = e.target.querySelector("button");
+      submitButton.disabled = true;
+      submitButton.classList.add("loading");
+      submitButton.textContent = "Sending...";
+
+      // Get values from the form fields
+      const name = document.getElementById("name").value.trim();
+      const mobile = document.getElementById("mobile").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      // Basic validation check
+      if (!name || !mobile || !email || !message) {
+        showResponse("Please fill out all fields.", true);
+        submitButton.disabled = false;
+        submitButton.classList.remove("loading");
+        submitButton.textContent = "Send Message";
+        return;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showResponse("Please enter a valid email address.", true);
+        submitButton.disabled = false;
+        submitButton.classList.remove("loading");
+        submitButton.textContent = "Send Message";
+        return;
+      }
+
+      // Mobile validation - basic check for digits
+      const mobileRegex = /^\d{10,15}$/;
+      if (!mobileRegex.test(mobile.replace(/[-\s()]/g, ''))) {
+        showResponse("Please enter a valid mobile number.", true);
+        submitButton.disabled = false;
+        submitButton.classList.remove("loading");
+        submitButton.textContent = "Send Message";
+        return;
+      }
+
+      // Insert the contact data into the "contacts" table in your database
+      try {
+        let { data, error } = await supabaseClient
+          .from("contacts")
+          .insert([{ name, mobile, email, message }]);
+
+        if (error) throw error;
+
+        showResponse("Thank you for reaching out! Your message has been sent.");
+
+        // Clear the form after successful submission
+        document.getElementById("contactForm").reset();
+      } catch (err) {
+        console.error("Error submitting form:", err);
+        showResponse("An error occurred. Please try again later.", true);
+      } finally {
+        // Remove loading state
+        submitButton.disabled = false;
+        submitButton.classList.remove("loading");
+        submitButton.textContent = "Send Message";
+      }
+    });
+  </script>
+</body>
+</html>
